@@ -23,11 +23,10 @@ import org.apache.logging.log4j.Logger;
 
 import org.apache.geode.SystemFailure;
 import org.apache.geode.cache.CacheClosedException;
-import org.apache.geode.cache.CacheFactory;
 import org.apache.geode.cache.Declarable;
 import org.apache.geode.cache.asyncqueue.AsyncEventListener;
 import org.apache.geode.cache.asyncqueue.AsyncEventQueueFactory;
-import org.apache.geode.cache.execute.FunctionAdapter;
+import org.apache.geode.cache.execute.Function;
 import org.apache.geode.cache.execute.FunctionContext;
 import org.apache.geode.cache.wan.GatewayEventFilter;
 import org.apache.geode.cache.wan.GatewayEventSubstitutionFilter;
@@ -48,25 +47,19 @@ import org.apache.geode.management.internal.configuration.domain.XmlEntity;
  *
  * @since GemFire 8.0
  */
-public class CreateAsyncEventQueueFunction extends FunctionAdapter implements InternalEntity {
+public class CreateAsyncEventQueueFunction implements Function, InternalEntity {
   private static final Logger logger = LogService.getLogger();
-
   private static final long serialVersionUID = 1L;
 
-  private InternalCache getCache() {
-    return (InternalCache) CacheFactory.getAnyInstance();
-  }
-
-  @SuppressWarnings("deprecation")
   @Override
-  public void execute(FunctionContext context) {
+  public void execute(final FunctionContext context) {
     // Declared here so that it's available when returning a Throwable
     String memberId = "";
 
     try {
       AsyncEventQueueFunctionArgs aeqArgs = (AsyncEventQueueFunctionArgs) context.getArguments();
 
-      InternalCache cache = getCache();
+      InternalCache cache = (InternalCache) context.getCache();
 
       DistributedMember member = cache.getDistributedSystem().getDistributedMember();
 
@@ -147,17 +140,19 @@ public class CreateAsyncEventQueueFunction extends FunctionAdapter implements In
     }
   }
 
-  private Class<?> forName(String className, String neededFor) {
+  private Class<?> forName(final String className, final String neededFor) {
     if (Strings.isNullOrEmpty(className)) {
       return null;
     }
 
     try {
       return ClassPathLoader.getLatest().forName(className);
+
     } catch (ClassNotFoundException e) {
       throw new RuntimeException(CliStrings.format(
           CliStrings.CREATE_ASYNC_EVENT_QUEUE__MSG__COULD_NOT_FIND_CLASS_0_SPECIFIED_FOR_1,
           className, neededFor), e);
+
     } catch (ClassCastException e) {
       throw new RuntimeException(CliStrings.format(
           CliStrings.CREATE_ASYNC_EVENT_QUEUE__MSG__CLASS_0_SPECIFIED_FOR_1_IS_NOT_OF_EXPECTED_TYPE,
@@ -165,13 +160,15 @@ public class CreateAsyncEventQueueFunction extends FunctionAdapter implements In
     }
   }
 
-  private static Object newInstance(Class<?> klass, String neededFor) {
+  private static Object newInstance(final Class<?> klass, final String neededFor) {
     try {
       return klass.newInstance();
+
     } catch (InstantiationException e) {
       throw new RuntimeException(CliStrings.format(
           CliStrings.CREATE_ASYNC_EVENT_QUEUE__MSG__COULD_NOT_INSTANTIATE_CLASS_0_SPECIFIED_FOR_1,
           klass, neededFor), e);
+
     } catch (IllegalAccessException e) {
       throw new RuntimeException(CliStrings.format(
           CliStrings.CREATE_ASYNC_EVENT_QUEUE__MSG__COULD_NOT_ACCESS_CLASS_0_SPECIFIED_FOR_1, klass,
@@ -179,8 +176,4 @@ public class CreateAsyncEventQueueFunction extends FunctionAdapter implements In
     }
   }
 
-  @Override
-  public String getId() {
-    return CreateDiskStoreFunction.class.getName();
-  }
 }

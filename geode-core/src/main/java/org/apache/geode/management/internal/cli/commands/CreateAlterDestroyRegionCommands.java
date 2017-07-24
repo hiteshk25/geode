@@ -259,6 +259,7 @@ public class CreateAlterDestroyRegionCommands implements GfshCommand {
         String cacheWriterClass =
             cacheWriter != null ? cacheWriter : regionAttributesResult.getCacheWriterClass();
 
+        // use constructor with RegionAttributes (NOTE: evictionMax and compressor are null)
         regionFunctionArgs = new RegionFunctionArgs(regionPath, useAttributesFrom, skipIfExists,
             keyConstraint, valueConstraint, statisticsEnabled, entryIdle, entryTTL, regionIdle,
             regionTTL, diskStore, diskSynchronous, enableAsyncConflation,
@@ -266,7 +267,7 @@ public class CreateAlterDestroyRegionCommands implements GfshCommand {
             asyncEventQueueIds, gatewaySenderIds, concurrencyChecksEnabled, cloningEnabled,
             concurrencyLevel, prColocatedWith, prLocalMaxMemory, prRecoveryDelay, prRedundantCopies,
             prStartupRecoveryDelay, prTotalMaxMemory, prTotalNumBuckets, offHeap, mcastEnabled,
-            regionAttributes, partitionResolver);
+            partitionResolver, regionAttributes);
 
         if (regionAttributes.getPartitionAttributes() == null
             && regionFunctionArgs.hasPartitionAttributes()) {
@@ -277,6 +278,7 @@ public class CreateAlterDestroyRegionCommands implements GfshCommand {
                   useAttributesFrom));
         }
       } else {
+        // use constructor with RegionShortcut (NOTE: evictionMax is null)
         regionFunctionArgs = new RegionFunctionArgs(regionPath, regionShortcut, useAttributesFrom,
             skipIfExists, keyConstraint, valueConstraint, statisticsEnabled, entryIdle, entryTTL,
             regionIdle, regionTTL, diskStore, diskSynchronous, enableAsyncConflation,
@@ -318,7 +320,7 @@ public class CreateAlterDestroyRegionCommands implements GfshCommand {
         return ResultBuilder.createUserErrorResult(CliStrings.NO_CACHING_MEMBERS_FOUND_MESSAGE);
       }
 
-      ResultCollector<?, ?> resultCollector = CliUtil.executeFunction(RegionCreateFunction.INSTANCE,
+      ResultCollector<?, ?> resultCollector = CliUtil.executeFunction(new RegionCreateFunction(),
           regionFunctionArgs, membersToCreateRegionOn);
       @SuppressWarnings("unchecked")
       List<CliFunctionResult> regionCreateResults =
@@ -559,7 +561,7 @@ public class CreateAlterDestroyRegionCommands implements GfshCommand {
     return result;
   }
 
-  private static boolean regionExists(InternalCache cache, String regionPath) {
+  private boolean regionExists(InternalCache cache, String regionPath) {
     boolean regionFound = false;
     if (regionPath != null && !Region.SEPARATOR.equals(regionPath)) {
       ManagementService managementService = ManagementService.getExistingManagementService(cache);
@@ -866,8 +868,8 @@ public class CreateAlterDestroyRegionCommands implements GfshCommand {
     return false;
   }
 
-  private static <K, V> FetchRegionAttributesFunctionResult<K, V> getRegionAttributes(
-      InternalCache cache, String regionPath) {
+  private <K, V> FetchRegionAttributesFunctionResult<K, V> getRegionAttributes(InternalCache cache,
+      String regionPath) {
     if (!isClusterWideSameConfig(cache, regionPath)) {
       throw new IllegalStateException(CliStrings.format(
           CliStrings.CREATE_REGION__MSG__USE_ATTRIBUTES_FORM_REGIONS_EXISTS_BUT_DIFFERENT_SCOPE_OR_DATAPOLICY_USE_DESCRIBE_REGION_FOR_0,
@@ -878,7 +880,7 @@ public class CreateAlterDestroyRegionCommands implements GfshCommand {
     // First check whether the region exists on a this manager, if yes then no
     // need to use FetchRegionAttributesFunction to fetch RegionAttributes
     try {
-      attributes = FetchRegionAttributesFunction.getRegionAttributes(regionPath);
+      attributes = FetchRegionAttributesFunction.getRegionAttributes(cache, regionPath);
     } catch (IllegalArgumentException e) {
       /* region doesn't exist on the manager */
     }
@@ -890,7 +892,7 @@ public class CreateAlterDestroyRegionCommands implements GfshCommand {
       if (regionAssociatedMembers != null && !regionAssociatedMembers.isEmpty()) {
         DistributedMember distributedMember = regionAssociatedMembers.iterator().next();
         ResultCollector<?, ?> resultCollector = CliUtil
-            .executeFunction(FetchRegionAttributesFunction.INSTANCE, regionPath, distributedMember);
+            .executeFunction(new FetchRegionAttributesFunction(), regionPath, distributedMember);
         List<?> resultsList = (List<?>) resultCollector.getResult();
 
         if (resultsList != null && !resultsList.isEmpty()) {
@@ -920,7 +922,7 @@ public class CreateAlterDestroyRegionCommands implements GfshCommand {
     return attributes;
   }
 
-  private static boolean isClusterWideSameConfig(InternalCache cache, String regionPath) {
+  private boolean isClusterWideSameConfig(InternalCache cache, String regionPath) {
     ManagementService managementService = ManagementService.getExistingManagementService(cache);
 
     DistributedSystemMXBean dsMXBean = managementService.getDistributedSystemMXBean();
@@ -1002,7 +1004,7 @@ public class CreateAlterDestroyRegionCommands implements GfshCommand {
       CliFunctionResult destroyRegionResult;
 
       ResultCollector<?, ?> resultCollector =
-          CliUtil.executeFunction(RegionDestroyFunction.INSTANCE, regionPath, regionMembersList);
+          CliUtil.executeFunction(new RegionDestroyFunction(), regionPath, regionMembersList);
       List<CliFunctionResult> resultsList = (List<CliFunctionResult>) resultCollector.getResult();
       String message =
           CliStrings.format(CliStrings.DESTROY_REGION__MSG__REGION_0_1_DESTROYED, regionPath, "");

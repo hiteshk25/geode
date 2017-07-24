@@ -16,46 +16,37 @@ package org.apache.geode.management.internal.cli.functions;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.StringTokenizer;
 
 import org.apache.commons.lang.ArrayUtils;
-import org.apache.geode.internal.ClassPathLoader;
 import org.apache.logging.log4j.Logger;
 
 import org.apache.geode.SystemFailure;
+import org.apache.geode.cache.Cache;
 import org.apache.geode.cache.CacheClosedException;
-import org.apache.geode.cache.CacheFactory;
 import org.apache.geode.cache.execute.Function;
 import org.apache.geode.cache.execute.FunctionContext;
 import org.apache.geode.distributed.DistributedMember;
-import org.apache.geode.internal.InternalEntity;
+import org.apache.geode.internal.ClassPathLoader;
 import org.apache.geode.internal.DeployedJar;
+import org.apache.geode.internal.InternalEntity;
 import org.apache.geode.internal.JarDeployer;
-import org.apache.geode.internal.cache.InternalCache;
 import org.apache.geode.internal.logging.LogService;
 
 public class UndeployFunction implements Function, InternalEntity {
+  private static final long serialVersionUID = 1L;
   private static final Logger logger = LogService.getLogger();
 
-  public static final String ID = UndeployFunction.class.getName();
-
-  private static final long serialVersionUID = 1L;
-
-  private InternalCache getCache() {
-    return (InternalCache) CacheFactory.getAnyInstance();
-  }
-
   @Override
-  public void execute(FunctionContext context) {
+  public void execute(final FunctionContext context) {
     // Declared here so that it's available when returning a Throwable
     String memberId = "";
 
     try {
-      final Object[] args = (Object[]) context.getArguments();
-      final String[] jarFilenameList = (String[]) args[0]; // Comma separated
-      InternalCache cache = getCache();
+      Object[] args = (Object[]) context.getArguments();
+      String[] jarFilenameList = (String[]) args[0]; // Comma separated
+      Cache cache = context.getCache();
 
-      final JarDeployer jarDeployer = ClassPathLoader.getLatest().getJarDeployer();
+      JarDeployer jarDeployer = ClassPathLoader.getLatest().getJarDeployer();
 
       DistributedMember member = cache.getDistributedSystem().getDistributedMember();
 
@@ -67,8 +58,9 @@ public class UndeployFunction implements Function, InternalEntity {
 
       String[] undeployedJars = new String[0];
       if (ArrayUtils.isEmpty(jarFilenameList)) {
-        final List<DeployedJar> jarClassLoaders = jarDeployer.findDeployedJars();
+        List<DeployedJar> jarClassLoaders = jarDeployer.findDeployedJars();
         undeployedJars = new String[jarClassLoaders.size() * 2];
+
         int index = 0;
         for (DeployedJar jarClassLoader : jarClassLoaders) {
           undeployedJars[index++] = jarClassLoader.getJarName();
@@ -80,8 +72,9 @@ public class UndeployFunction implements Function, InternalEntity {
             undeployedJars[index++] = iaex.getMessage();
           }
         }
+
       } else {
-        List<String> undeployedList = new ArrayList<String>();
+        List<String> undeployedList = new ArrayList<>();
         for (String jarFilename : jarFilenameList) {
           try {
             undeployedList.add(jarFilename);
@@ -114,11 +107,6 @@ public class UndeployFunction implements Function, InternalEntity {
   }
 
   @Override
-  public String getId() {
-    return ID;
-  }
-
-  @Override
   public boolean hasResult() {
     return true;
   }
@@ -132,4 +120,5 @@ public class UndeployFunction implements Function, InternalEntity {
   public boolean isHA() {
     return false;
   }
+
 }

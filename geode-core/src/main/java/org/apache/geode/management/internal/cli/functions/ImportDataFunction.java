@@ -17,9 +17,8 @@ package org.apache.geode.management.internal.cli.functions;
 import java.io.File;
 
 import org.apache.geode.cache.Cache;
-import org.apache.geode.cache.CacheFactory;
 import org.apache.geode.cache.Region;
-import org.apache.geode.cache.execute.FunctionAdapter;
+import org.apache.geode.cache.execute.Function;
 import org.apache.geode.cache.execute.FunctionContext;
 import org.apache.geode.cache.snapshot.RegionSnapshotService;
 import org.apache.geode.cache.snapshot.SnapshotOptions;
@@ -27,28 +26,28 @@ import org.apache.geode.cache.snapshot.SnapshotOptions.SnapshotFormat;
 import org.apache.geode.internal.InternalEntity;
 import org.apache.geode.management.internal.cli.i18n.CliStrings;
 
-/****
+/**
  * Function which carries out the import of a region to a file on a member. Uses the
  * RegionSnapshotService to import the data
- *
  */
-public class ImportDataFunction extends FunctionAdapter implements InternalEntity {
-
+public class ImportDataFunction implements Function, InternalEntity {
   private static final long serialVersionUID = 1L;
 
-  public void execute(FunctionContext context) {
-    final Object[] args = (Object[]) context.getArguments();
-    final String regionName = (String) args[0];
-    final String importFileName = (String) args[1];
+  public void execute(final FunctionContext context) {
+    Object[] args = (Object[]) context.getArguments();
+    String regionName = (String) args[0];
+    String importFileName = (String) args[1];
+
     boolean invokeCallbacks = false;
     if (args.length > 2) {
       invokeCallbacks = (boolean) args[2];
     }
 
     try {
-      final Cache cache = CacheFactory.getAnyInstance();
-      final Region<?, ?> region = cache.getRegion(regionName);
-      final String hostName = cache.getDistributedSystem().getDistributedMember().getHost();
+      Cache cache = context.getCache();
+      Region<?, ?> region = cache.getRegion(regionName);
+      String hostName = cache.getDistributedSystem().getDistributedMember().getHost();
+
       if (region != null) {
         RegionSnapshotService<?, ?> snapshotService = region.getSnapshotService();
         SnapshotOptions options = snapshotService.createOptions();
@@ -58,6 +57,7 @@ public class ImportDataFunction extends FunctionAdapter implements InternalEntit
         String successMessage = CliStrings.format(CliStrings.IMPORT_DATA__SUCCESS__MESSAGE,
             importFile.getCanonicalPath(), hostName, regionName);
         context.getResultSender().lastResult(successMessage);
+
       } else {
         throw new IllegalArgumentException(
             CliStrings.format(CliStrings.REGION_NOT_FOUND, regionName));
@@ -66,10 +66,6 @@ public class ImportDataFunction extends FunctionAdapter implements InternalEntit
     } catch (Exception e) {
       context.getResultSender().sendException(e);
     }
-  }
-
-  public String getId() {
-    return ImportDataFunction.class.getName();
   }
 
 }

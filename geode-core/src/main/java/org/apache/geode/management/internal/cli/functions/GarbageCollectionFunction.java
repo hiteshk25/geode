@@ -16,8 +16,8 @@ package org.apache.geode.management.internal.cli.functions;
 
 import java.util.HashMap;
 import java.util.Map;
+
 import org.apache.geode.cache.Cache;
-import org.apache.geode.cache.CacheFactory;
 import org.apache.geode.cache.execute.Function;
 import org.apache.geode.cache.execute.FunctionContext;
 import org.apache.geode.distributed.DistributedMember;
@@ -26,24 +26,18 @@ import org.apache.geode.management.internal.cli.CliUtil;
 import org.apache.geode.management.internal.cli.util.BytesToString;
 
 /**
- * 
  * Class for Garbage collection function
- * 
- * 
- * 
  */
 public class GarbageCollectionFunction implements Function, InternalEntity {
-  public static final String ID = GarbageCollectionFunction.class.getName();
-
   private static final long serialVersionUID = 1L;
 
   @Override
-  public void execute(FunctionContext context) {
+  public void execute(final FunctionContext context) {
     BytesToString bytesToString = new BytesToString();
 
     Map<String, String> resultMap = null;
     try {
-      Cache cache = CacheFactory.getAnyInstance();
+      Cache cache = context.getCache();
       DistributedMember member = cache.getDistributedSystem().getDistributedMember();
       long freeMemoryBeforeGC = Runtime.getRuntime().freeMemory();
       long totalMemoryBeforeGC = Runtime.getRuntime().totalMemory();
@@ -59,6 +53,7 @@ public class GarbageCollectionFunction implements Function, InternalEntity {
       resultMap.put("HeapSizeBeforeGC", bytesToString.of(totalMemoryBeforeGC - freeMemoryBeforeGC));
       resultMap.put("HeapSizeAfterGC", bytesToString.of(totalMemoryAfterGC - freeMemoryAfterGC));
       resultMap.put("TimeSpentInGC", String.valueOf(timeAfterGC - timeBeforeGC));
+
     } catch (Exception ex) {
       String message = "Exception in GC:" + ex.getMessage() + CliUtil.stackTraceAsString(ex);
 
@@ -68,14 +63,10 @@ public class GarbageCollectionFunction implements Function, InternalEntity {
   }
 
   @Override
-  public String getId() {
-    return GarbageCollectionFunction.ID;
-  }
-
-  @Override
   public boolean isHA() {
     return false;
   }
+
 }
 
 

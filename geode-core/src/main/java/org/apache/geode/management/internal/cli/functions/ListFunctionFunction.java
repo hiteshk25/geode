@@ -25,7 +25,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.geode.SystemFailure;
 import org.apache.geode.cache.Cache;
 import org.apache.geode.cache.CacheClosedException;
-import org.apache.geode.cache.CacheFactory;
 import org.apache.geode.cache.execute.Function;
 import org.apache.geode.cache.execute.FunctionContext;
 import org.apache.geode.cache.execute.FunctionService;
@@ -34,22 +33,19 @@ import org.apache.geode.internal.InternalEntity;
 import org.apache.geode.internal.logging.LogService;
 
 public class ListFunctionFunction implements Function, InternalEntity {
+  private static final long serialVersionUID = 1L;
   private static final Logger logger = LogService.getLogger();
 
-  public static final String ID = ListFunctionFunction.class.getName();
-
-  private static final long serialVersionUID = 1L;
-
   @Override
-  public void execute(FunctionContext context) {
+  public void execute(final FunctionContext context) {
     // Declared here so that it's available when returning a Throwable
     String memberId = "";
 
     try {
-      final Object[] args = (Object[]) context.getArguments();
-      final String stringPattern = (String) args[0];
+      Object[] args = (Object[]) context.getArguments();
+      String stringPattern = (String) args[0];
 
-      Cache cache = CacheFactory.getAnyInstance();
+      Cache cache = context.getCache();
       DistributedMember member = cache.getDistributedSystem().getDistributedMember();
 
       memberId = member.getId();
@@ -58,10 +54,12 @@ public class ListFunctionFunction implements Function, InternalEntity {
         memberId = member.getName();
       }
 
-      final Map<String, Function> functions = FunctionService.getRegisteredFunctions();
+      Map<String, Function> functions = FunctionService.getRegisteredFunctions();
       CliFunctionResult result;
+
       if (stringPattern == null || stringPattern.isEmpty()) {
         result = new CliFunctionResult(memberId, functions.keySet().toArray(new String[0]));
+
       } else {
         Pattern pattern = Pattern.compile(stringPattern);
         List<String> resultList = new LinkedList<String>();
@@ -73,6 +71,7 @@ public class ListFunctionFunction implements Function, InternalEntity {
         }
         result = new CliFunctionResult(memberId, resultList.toArray(new String[0]));
       }
+
       context.getResultSender().lastResult(result);
 
     } catch (CacheClosedException cce) {
@@ -92,11 +91,6 @@ public class ListFunctionFunction implements Function, InternalEntity {
   }
 
   @Override
-  public String getId() {
-    return ID;
-  }
-
-  @Override
   public boolean hasResult() {
     return true;
   }
@@ -110,4 +104,5 @@ public class ListFunctionFunction implements Function, InternalEntity {
   public boolean isHA() {
     return false;
   }
+
 }

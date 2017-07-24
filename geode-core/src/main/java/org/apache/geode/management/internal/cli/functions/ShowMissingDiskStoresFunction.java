@@ -19,11 +19,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.geode.cache.execute.FunctionAdapter;
+import org.apache.geode.cache.execute.Function;
 import org.apache.geode.cache.execute.FunctionContext;
 import org.apache.geode.distributed.DistributedMember;
 import org.apache.geode.internal.InternalEntity;
-import org.apache.geode.internal.cache.GemFireCacheImpl;
 import org.apache.geode.internal.cache.InternalCache;
 import org.apache.geode.internal.cache.PartitionedRegion;
 import org.apache.geode.internal.cache.partitioned.ColocatedRegionDetails;
@@ -31,21 +30,22 @@ import org.apache.geode.internal.cache.persistence.PersistentMemberID;
 import org.apache.geode.internal.cache.persistence.PersistentMemberManager;
 import org.apache.geode.internal.cache.persistence.PersistentMemberPattern;
 
-public class ShowMissingDiskStoresFunction extends FunctionAdapter implements InternalEntity {
+public class ShowMissingDiskStoresFunction implements Function, InternalEntity {
 
   @Override
-  public void execute(FunctionContext context) {
-    final Set<PersistentMemberPattern> memberMissingIDs = new HashSet<PersistentMemberPattern>();
-    Set<ColocatedRegionDetails> missingColocatedRegions = new HashSet<ColocatedRegionDetails>();
-
+  public void execute(final FunctionContext context) {
     if (context == null) {
       throw new RuntimeException();
     }
+
+    Set<PersistentMemberPattern> memberMissingIDs = new HashSet<>();
+    Set<ColocatedRegionDetails> missingColocatedRegions = new HashSet<>();
+
     try {
-      final InternalCache cache = (InternalCache) context.getCache();
+      InternalCache cache = (InternalCache) context.getCache();
 
       if (cache != null && !cache.isClosed()) {
-        final DistributedMember member = cache.getMyId();
+        DistributedMember member = cache.getMyId();
 
         // Missing DiskStores
         PersistentMemberManager mm = cache.getPersistentMemberManager();
@@ -55,6 +55,7 @@ public class ShowMissingDiskStoresFunction extends FunctionAdapter implements In
             memberMissingIDs.add(new PersistentMemberPattern(id));
           }
         }
+
         // Missing colocated regions
         Set<PartitionedRegion> prs = cache.getPartitionedRegions();
         for (PartitionedRegion pr : prs) {
@@ -80,13 +81,10 @@ public class ShowMissingDiskStoresFunction extends FunctionAdapter implements In
           context.getResultSender().lastResult(missingColocatedRegions);
         }
       }
+
     } catch (Exception e) {
       context.getResultSender().sendException(e);
     }
   }
 
-  @Override
-  public String getId() {
-    return getClass().getName();
-  }
 }

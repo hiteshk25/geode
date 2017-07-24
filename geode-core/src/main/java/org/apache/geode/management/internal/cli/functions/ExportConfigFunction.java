@@ -23,7 +23,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.geode.SystemFailure;
 import org.apache.geode.cache.Cache;
 import org.apache.geode.cache.CacheClosedException;
-import org.apache.geode.cache.CacheFactory;
 import org.apache.geode.cache.execute.Function;
 import org.apache.geode.cache.execute.FunctionContext;
 import org.apache.geode.distributed.DistributedMember;
@@ -35,19 +34,16 @@ import org.apache.geode.internal.cache.xmlcache.CacheXmlGenerator;
 import org.apache.geode.internal.logging.LogService;
 
 public class ExportConfigFunction implements Function, InternalEntity {
+  private static final long serialVersionUID = 1L;
   private static final Logger logger = LogService.getLogger();
 
-  public static final String ID = ExportConfigFunction.class.getName();
-
-  private static final long serialVersionUID = 1L;
-
   @Override
-  public void execute(FunctionContext context) {
+  public void execute(final FunctionContext context) {
     // Declared here so that it's available when returning a Throwable
     String memberId = "";
 
     try {
-      Cache cache = CacheFactory.getAnyInstance();
+      Cache cache = context.getCache();
       DistributedMember member = cache.getDistributedSystem().getDistributedMember();
 
       memberId = member.getId();
@@ -66,26 +62,30 @@ public class ExportConfigFunction implements Function, InternalEntity {
       DistributionConfigImpl config =
           (DistributionConfigImpl) ((InternalDistributedSystem) cache.getDistributedSystem())
               .getConfig();
-      StringBuffer propStringBuf = new StringBuffer();
+      StringBuilder propStringBuf = new StringBuilder();
       String lineSeparator = System.getProperty("line.separator");
+
       for (Map.Entry entry : config.getConfigPropsFromSource(ConfigSource.runtime()).entrySet()) {
         if (entry.getValue() != null && !entry.getValue().equals("")) {
           propStringBuf.append(entry.getKey()).append("=").append(entry.getValue())
               .append(lineSeparator);
         }
       }
+
       for (Map.Entry entry : config.getConfigPropsFromSource(ConfigSource.api()).entrySet()) {
         if (entry.getValue() != null && !entry.getValue().equals("")) {
           propStringBuf.append(entry.getKey()).append("=").append(entry.getValue())
               .append(lineSeparator);
         }
       }
+
       for (Map.Entry entry : config.getConfigPropsDefinedUsingFiles().entrySet()) {
         if (entry.getValue() != null && !entry.getValue().equals("")) {
           propStringBuf.append(entry.getKey()).append("=").append(entry.getValue())
               .append(lineSeparator);
         }
       }
+
       // fix for bug 46653
       for (Map.Entry entry : config.getConfigPropsFromSource(ConfigSource.launcher()).entrySet()) {
         if (entry.getValue() != null && !entry.getValue().equals("")) {
@@ -116,11 +116,6 @@ public class ExportConfigFunction implements Function, InternalEntity {
   }
 
   @Override
-  public String getId() {
-    return ID;
-  }
-
-  @Override
   public boolean hasResult() {
     return true;
   }
@@ -134,4 +129,5 @@ public class ExportConfigFunction implements Function, InternalEntity {
   public boolean isHA() {
     return false;
   }
+
 }

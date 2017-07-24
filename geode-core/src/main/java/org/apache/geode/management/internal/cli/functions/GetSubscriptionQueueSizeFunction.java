@@ -15,7 +15,7 @@
 package org.apache.geode.management.internal.cli.functions;
 
 import org.apache.geode.cache.Cache;
-import org.apache.geode.cache.execute.FunctionAdapter;
+import org.apache.geode.cache.execute.Function;
 import org.apache.geode.cache.execute.FunctionContext;
 import org.apache.geode.cache.query.CqQuery;
 import org.apache.geode.cache.query.internal.CqQueryVsdStats;
@@ -28,18 +28,16 @@ import org.apache.geode.management.internal.cli.CliUtil;
 import org.apache.geode.management.internal.cli.domain.SubscriptionQueueSizeResult;
 import org.apache.geode.management.internal.cli.i18n.CliStrings;
 
-/***
+/**
  * Function to get subscription-queue-size
- *
  */
-public class GetSubscriptionQueueSizeFunction extends FunctionAdapter implements InternalEntity {
-
+public class GetSubscriptionQueueSizeFunction implements Function, InternalEntity {
   private static final long serialVersionUID = 1L;
 
   @Override
-  public void execute(FunctionContext context) {
-    final Cache cache = CliUtil.getCacheIfExists();
-    final String memberNameOrId =
+  public void execute(final FunctionContext context) {
+    Cache cache = context.getCache();
+    String memberNameOrId =
         CliUtil.getMemberNameOrId(cache.getDistributedSystem().getDistributedMember());
     String args[] = (String[]) context.getArguments();
     String durableClientId = null, cqName = null;
@@ -90,16 +88,13 @@ public class GetSubscriptionQueueSizeFunction extends FunctionAdapter implements
       } else {
         result.setErrorMessage(CliStrings.NO_CLIENT_FOUND);
       }
+
     } catch (Exception e) {
       result.setExceptionMessage(e.getMessage());
+
     } finally {
       context.getResultSender().lastResult(result);
     }
-  }
-
-  @Override
-  public String getId() {
-    return GetSubscriptionQueueSizeFunction.class.getName();
   }
 
 }

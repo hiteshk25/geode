@@ -16,40 +16,32 @@ package org.apache.geode.management.internal.cli.functions;
 
 import java.util.List;
 
-import org.apache.geode.internal.ClassPathLoader;
-import org.apache.geode.internal.DeployedJar;
 import org.apache.logging.log4j.Logger;
 
 import org.apache.geode.SystemFailure;
+import org.apache.geode.cache.Cache;
 import org.apache.geode.cache.CacheClosedException;
-import org.apache.geode.cache.CacheFactory;
 import org.apache.geode.cache.execute.Function;
 import org.apache.geode.cache.execute.FunctionContext;
 import org.apache.geode.distributed.DistributedMember;
+import org.apache.geode.internal.ClassPathLoader;
+import org.apache.geode.internal.DeployedJar;
 import org.apache.geode.internal.InternalEntity;
 import org.apache.geode.internal.JarDeployer;
-import org.apache.geode.internal.cache.InternalCache;
 import org.apache.geode.internal.logging.LogService;
 
 public class ListDeployedFunction implements Function, InternalEntity {
+  private static final long serialVersionUID = 1L;
   private static final Logger logger = LogService.getLogger();
 
-  public static final String ID = ListDeployedFunction.class.getName();
-
-  private static final long serialVersionUID = 1L;
-
-  private InternalCache getCache() {
-    return (InternalCache) CacheFactory.getAnyInstance();
-  }
-
   @Override
-  public void execute(FunctionContext context) {
+  public void execute(final FunctionContext context) {
     // Declared here so that it's available when returning a Throwable
     String memberId = "";
 
     try {
-      InternalCache cache = getCache();
-      final JarDeployer jarDeployer = ClassPathLoader.getLatest().getJarDeployer();
+      Cache cache = context.getCache();
+      JarDeployer jarDeployer = ClassPathLoader.getLatest().getJarDeployer();
 
       DistributedMember member = cache.getDistributedSystem().getDistributedMember();
 
@@ -59,8 +51,9 @@ public class ListDeployedFunction implements Function, InternalEntity {
         memberId = member.getName();
       }
 
-      final List<DeployedJar> jarClassLoaders = jarDeployer.findDeployedJars();
-      final String[] jars = new String[jarClassLoaders.size() * 2];
+      List<DeployedJar> jarClassLoaders = jarDeployer.findDeployedJars();
+      String[] jars = new String[jarClassLoaders.size() * 2];
+
       int index = 0;
       for (DeployedJar jarClassLoader : jarClassLoaders) {
         jars[index++] = jarClassLoader.getJarName();
@@ -87,11 +80,6 @@ public class ListDeployedFunction implements Function, InternalEntity {
   }
 
   @Override
-  public String getId() {
-    return ID;
-  }
-
-  @Override
   public boolean hasResult() {
     return true;
   }
@@ -105,4 +93,5 @@ public class ListDeployedFunction implements Function, InternalEntity {
   public boolean isHA() {
     return false;
   }
+
 }

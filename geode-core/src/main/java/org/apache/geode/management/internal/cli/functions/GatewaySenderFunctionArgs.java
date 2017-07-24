@@ -16,7 +16,6 @@ package org.apache.geode.management.internal.cli.functions;
 
 import java.io.Serializable;
 
-
 public class GatewaySenderFunctionArgs implements Serializable {
   private static final long serialVersionUID = -5158224572470173267L;
 
@@ -36,16 +35,18 @@ public class GatewaySenderFunctionArgs implements Serializable {
   private final Integer alertThreshold;
   private final Integer dispatcherThreads;
   private final String orderPolicy;
-  // array of fully qualified class names of the filters
+
+  /** array of fully qualified class names of the filters */
   private final String[] gatewayEventFilters;
   private final String[] gatewayTransportFilters;
 
-  public GatewaySenderFunctionArgs(String id, Integer remoteDSId, Boolean parallel,
-      Boolean manualStart, Integer socketBufferSize, Integer socketReadTimeout,
-      Boolean enableBatchConflation, Integer batchSize, Integer batchTimeInterval,
-      Boolean enablePersistence, String diskStoreName, Boolean diskSynchronous,
-      Integer maxQueueMemory, Integer alertThreshold, Integer dispatcherThreads, String orderPolicy,
-      String[] gatewayEventFilters, String[] gatewayTransportFilters) {
+  public GatewaySenderFunctionArgs(final String id, final Integer remoteDSId,
+      final Boolean parallel, final Boolean manualStart, final Integer socketBufferSize,
+      final Integer socketReadTimeout, final Boolean enableBatchConflation, final Integer batchSize,
+      final Integer batchTimeInterval, final Boolean enablePersistence, final String diskStoreName,
+      final Boolean diskSynchronous, final Integer maxQueueMemory, final Integer alertThreshold,
+      final Integer dispatcherThreads, final String orderPolicy, final String[] gatewayEventFilters,
+      final String[] gatewayTransportFilters) {
 
     this.id = id;
     this.remoteDSId = remoteDSId;
@@ -138,4 +139,5 @@ public class GatewaySenderFunctionArgs implements Serializable {
   public String[] getGatewayTransportFilter() {
     return this.gatewayTransportFilters;
   }
+
 }

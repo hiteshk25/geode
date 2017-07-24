@@ -21,31 +21,32 @@ import java.util.Properties;
  * This class stores the arguments provided for create async event queue command.
  */
 public class AsyncEventQueueFunctionArgs implements Serializable {
-
   private static final long serialVersionUID = -6524494645663740872L;
 
-  private String asyncEventQueueId;
-  private boolean isParallel;
-  private boolean enableBatchConflation;
-  private int batchSize;
-  private int batchTimeInterval;
-  private boolean persistent;
-  private String diskStoreName;
-  private boolean diskSynchronous;
-  private int maxQueueMemory;
-  private int dispatcherThreads;
-  private String orderPolicy;
-  private String[] gatewayEventFilters;
-  private String gatewaySubstitutionFilter;
-  private String listenerClassName;
-  private Properties listenerProperties;
-  private boolean forwardExpirationDestroy;
+  private final String asyncEventQueueId;
+  private final boolean isParallel;
+  private final boolean enableBatchConflation;
+  private final int batchSize;
+  private final int batchTimeInterval;
+  private final boolean persistent;
+  private final String diskStoreName;
+  private final boolean diskSynchronous;
+  private final int maxQueueMemory;
+  private final int dispatcherThreads;
+  private final String orderPolicy;
+  private final String[] gatewayEventFilters;
+  private final String gatewaySubstitutionFilter;
+  private final String listenerClassName;
+  private final Properties listenerProperties;
+  private final boolean forwardExpirationDestroy;
 
-  public AsyncEventQueueFunctionArgs(String asyncEventQueueId, boolean isParallel,
-      boolean enableBatchConflation, int batchSize, int batchTimeInterval, boolean persistent,
-      String diskStoreName, boolean diskSynchronous, int maxQueueMemory, int dispatcherThreads,
-      String orderPolicy, String[] gatewayEventFilters, String gatewaySubstitutionFilter,
-      String listenerClassName, Properties listenerProperties, boolean forwardExpirationDestroy) {
+  public AsyncEventQueueFunctionArgs(final String asyncEventQueueId, final boolean isParallel,
+      final boolean enableBatchConflation, final int batchSize, final int batchTimeInterval,
+      final boolean persistent, final String diskStoreName, final boolean diskSynchronous,
+      final int maxQueueMemory, final int dispatcherThreads, final String orderPolicy,
+      final String[] gatewayEventFilters, final String gatewaySubstitutionFilter,
+      final String listenerClassName, final Properties listenerProperties,
+      final boolean forwardExpirationDestroy) {
     this.asyncEventQueueId = asyncEventQueueId;
     this.isParallel = isParallel;
     this.enableBatchConflation = enableBatchConflation;
@@ -127,4 +128,5 @@ public class AsyncEventQueueFunctionArgs implements Serializable {
   public boolean isForwardExpirationDestroy() {
     return forwardExpirationDestroy;
   }
+
 }

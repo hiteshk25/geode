@@ -15,8 +15,7 @@
 package org.apache.geode.management.internal.cli.functions;
 
 import org.apache.geode.cache.Cache;
-import org.apache.geode.cache.CacheFactory;
-import org.apache.geode.cache.execute.FunctionAdapter;
+import org.apache.geode.cache.execute.Function;
 import org.apache.geode.cache.execute.FunctionContext;
 import org.apache.geode.cache.query.IndexExistsException;
 import org.apache.geode.cache.query.IndexInvalidException;
@@ -29,28 +28,28 @@ import org.apache.geode.management.internal.cli.domain.IndexInfo;
 import org.apache.geode.management.internal.cli.i18n.CliStrings;
 import org.apache.geode.management.internal.configuration.domain.XmlEntity;
 
-/***
+/**
  * Function to create index in a member, based on different arguments passed to it
- *
  */
-public class CreateIndexFunction extends FunctionAdapter implements InternalEntity {
-
-
+public class CreateIndexFunction implements Function, InternalEntity {
   private static final long serialVersionUID = 1L;
 
   @Override
-  public void execute(FunctionContext context) {
-    final IndexInfo indexInfo = (IndexInfo) context.getArguments();
+  public void execute(final FunctionContext context) {
+    IndexInfo indexInfo = (IndexInfo) context.getArguments();
     String memberId = null;
+
     try {
-      Cache cache = CacheFactory.getAnyInstance();
+      Cache cache = context.getCache();
       memberId = cache.getDistributedSystem().getDistributedMember().getId();
       QueryService queryService = cache.getQueryService();
       String indexName = indexInfo.getIndexName();
       String indexedExpression = indexInfo.getIndexedExpression();
       String fromClause = indexInfo.getRegionPath();
+
       // Check to see if the region path contains an alias e.g "/region1 r1"
       // Then the first string will be the regionPath
+
       String[] regionPathTokens = fromClause.trim().split(" ");
       String regionPath = regionPathTokens[0];
 
@@ -70,20 +69,25 @@ public class CreateIndexFunction extends FunctionAdapter implements InternalEnti
 
       regionPath = getValidRegionName(cache, regionPath);
       setResultInSender(context, indexInfo, memberId, cache, regionPath);
+
     } catch (IndexExistsException e) {
       String message =
           CliStrings.format(CliStrings.CREATE_INDEX__INDEX__EXISTS, indexInfo.getIndexName());
       context.getResultSender().lastResult(new CliFunctionResult(memberId, false, message));
+
     } catch (IndexNameConflictException e) {
       String message =
           CliStrings.format(CliStrings.CREATE_INDEX__NAME__CONFLICT, indexInfo.getIndexName());
       context.getResultSender().lastResult(new CliFunctionResult(memberId, false, message));
+
     } catch (RegionNotFoundException e) {
       String message = CliStrings.format(CliStrings.CREATE_INDEX__INVALID__REGIONPATH,
           indexInfo.getRegionPath());
       context.getResultSender().lastResult(new CliFunctionResult(memberId, false, message));
+
     } catch (IndexInvalidException e) {
       context.getResultSender().lastResult(new CliFunctionResult(memberId, e, e.getMessage()));
+
     } catch (Exception e) {
       String exceptionMessage = CliStrings.format(CliStrings.EXCEPTION_CLASS_AND_MESSAGE,
           e.getClass().getName(), e.getMessage());
@@ -91,12 +95,13 @@ public class CreateIndexFunction extends FunctionAdapter implements InternalEnti
     }
   }
 
-  private void setResultInSender(FunctionContext context, IndexInfo indexInfo, String memberId,
-      Cache cache, String regionPath) {
+  private void setResultInSender(final FunctionContext context, final IndexInfo indexInfo,
+      final String memberId, final Cache cache, final String regionPath) {
     if (regionPath == null) {
       String message = CliStrings.format(CliStrings.CREATE_INDEX__INVALID__REGIONPATH,
           indexInfo.getRegionPath());
       context.getResultSender().lastResult(new CliFunctionResult(memberId, false, message));
+
     } else {
       XmlEntity xmlEntity =
           new XmlEntity(CacheXml.REGION, "name", cache.getRegion(regionPath).getName());
@@ -104,7 +109,7 @@ public class CreateIndexFunction extends FunctionAdapter implements InternalEnti
     }
   }
 
-  private String getValidRegionName(Cache cache, String regionPath) {
+  private String getValidRegionName(final Cache cache, String regionPath) {
     while (regionPath != null && cache.getRegion(regionPath) == null) {
       int dotPosition;
       if (regionPath.contains(".") && ((dotPosition = regionPath.lastIndexOf('.')) != -1)) {
@@ -116,8 +121,4 @@ public class CreateIndexFunction extends FunctionAdapter implements InternalEnti
     return regionPath;
   }
 
-  @Override
-  public String getId() {
-    return CreateIndexFunction.class.getName();
-  }
 }

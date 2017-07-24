@@ -15,7 +15,6 @@
 package org.apache.geode.management.internal.cli.functions;
 
 import org.apache.geode.cache.Cache;
-import org.apache.geode.cache.CacheFactory;
 import org.apache.geode.cache.Region;
 import org.apache.geode.cache.execute.Function;
 import org.apache.geode.cache.execute.FunctionContext;
@@ -25,31 +24,22 @@ import org.apache.geode.management.internal.cli.i18n.CliStrings;
 import org.apache.geode.management.internal.configuration.domain.XmlEntity;
 
 /**
- * 
  * @since GemFire 7.0
  */
 public class RegionDestroyFunction implements Function, InternalEntity {
   private static final long serialVersionUID = 9172773671865750685L;
 
-  public static final RegionDestroyFunction INSTANCE = new RegionDestroyFunction();
-
-  private static final String ID = RegionDestroyFunction.class.getName();
-
   @Override
-  public boolean hasResult() {
-    return true;
-  }
-
-  @Override
-  public void execute(FunctionContext context) {
+  public void execute(final FunctionContext context) {
     String regionPath = null;
+
     try {
       String functionId = context.getFunctionId();
       if (getId().equals(functionId)) {
         Object arguments = context.getArguments();
         if (arguments != null) {
           regionPath = (String) arguments;
-          Cache cache = CacheFactory.getAnyInstance();
+          Cache cache = context.getCache();
           Region<?, ?> region = cache.getRegion(regionPath);
           region.destroyRegion();
           String regionName =
@@ -58,22 +48,25 @@ public class RegionDestroyFunction implements Function, InternalEntity {
           context.getResultSender().lastResult(new CliFunctionResult("", xmlEntity, regionPath));
         }
       }
+
       context.getResultSender().lastResult(new CliFunctionResult("", false, "FAILURE"));
+
     } catch (IllegalStateException e) {
       context.getResultSender().lastResult(new CliFunctionResult("", e, null));
+
     } catch (Exception ex) {
       context.getResultSender()
           .lastResult(new CliFunctionResult("",
               new RuntimeException(CliStrings.format(
                   CliStrings.DESTROY_REGION__MSG__ERROR_WHILE_DESTROYING_REGION_0_REASON_1,
-                  new Object[] {regionPath, ex.getMessage()})),
+                  regionPath, ex.getMessage())),
               null));
     }
   }
 
   @Override
-  public String getId() {
-    return ID;
+  public boolean hasResult() {
+    return true;
   }
 
   @Override
@@ -85,4 +78,5 @@ public class RegionDestroyFunction implements Function, InternalEntity {
   public boolean isHA() {
     return false;
   }
+
 }

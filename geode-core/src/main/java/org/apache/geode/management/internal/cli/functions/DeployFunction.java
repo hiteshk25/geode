@@ -21,38 +21,29 @@ import org.apache.logging.log4j.Logger;
 
 import org.apache.geode.SystemFailure;
 import org.apache.geode.cache.CacheClosedException;
-import org.apache.geode.cache.CacheFactory;
 import org.apache.geode.cache.execute.Function;
 import org.apache.geode.cache.execute.FunctionContext;
 import org.apache.geode.distributed.DistributedMember;
 import org.apache.geode.internal.ClassPathLoader;
 import org.apache.geode.internal.DeployedJar;
 import org.apache.geode.internal.InternalEntity;
-import org.apache.geode.internal.JarDeployer;
 import org.apache.geode.internal.cache.InternalCache;
 import org.apache.geode.internal.logging.LogService;
 
 public class DeployFunction implements Function, InternalEntity {
+  private static final long serialVersionUID = 1L;
   private static final Logger logger = LogService.getLogger();
 
-  public static final String ID = DeployFunction.class.getName();
-
-  private static final long serialVersionUID = 1L;
-
-  private InternalCache getCache() {
-    return (InternalCache) CacheFactory.getAnyInstance();
-  }
-
   @Override
-  public void execute(FunctionContext context) {
+  public void execute(final FunctionContext context) {
     // Declared here so that it's available when returning a Throwable
     String memberId = "";
 
     try {
-      final Object[] args = (Object[]) context.getArguments();
-      final String[] jarFilenames = (String[]) args[0];
-      final byte[][] jarBytes = (byte[][]) args[1];
-      InternalCache cache = getCache();
+      Object[] args = (Object[]) context.getArguments();
+      String[] jarFilenames = (String[]) args[0];
+      byte[][] jarBytes = (byte[][]) args[1];
+      InternalCache cache = (InternalCache) context.getCache();
 
       DistributedMember member = cache.getDistributedSystem().getDistributedMember();
 
@@ -96,11 +87,6 @@ public class DeployFunction implements Function, InternalEntity {
   }
 
   @Override
-  public String getId() {
-    return ID;
-  }
-
-  @Override
   public boolean hasResult() {
     return true;
   }
@@ -114,4 +100,5 @@ public class DeployFunction implements Function, InternalEntity {
   public boolean isHA() {
     return false;
   }
+
 }

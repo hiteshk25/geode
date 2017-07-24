@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.geode.cache.Cache;
-import org.apache.geode.cache.CacheFactory;
 import org.apache.geode.cache.Region;
 import org.apache.geode.cache.execute.Execution;
 import org.apache.geode.cache.execute.Function;
@@ -33,20 +32,18 @@ import org.apache.geode.management.internal.cli.GfshParser;
 import org.apache.geode.management.internal.cli.i18n.CliStrings;
 
 /**
- * 
  * @since GemFire 7.0
  */
 public class UserFunctionExecution implements Function, InternalEntity {
-  public static final String ID = UserFunctionExecution.class.getName();
-
   private static final long serialVersionUID = 1L;
 
   @Override
-  public void execute(FunctionContext context) {
+  public void execute(final FunctionContext context) {
     try {
-      Cache cache = CacheFactory.getAnyInstance();
+      Cache cache = context.getCache();
       DistributedMember member = cache.getDistributedSystem().getDistributedMember();
       String[] functionArgs = null;
+
       Object[] args = (Object[]) context.getArguments();
       if (args != null) {
         String functionId = ((String) args[0]);
@@ -115,6 +112,7 @@ public class UserFunctionExecution implements Function, InternalEntity {
                 }
               }
               context.getResultSender().lastResult(resultMessage);
+
             } else {
               context.getResultSender()
                   .lastResult(CliStrings.format(
@@ -129,12 +127,14 @@ public class UserFunctionExecution implements Function, InternalEntity {
               .lastResult(CliStrings.format(
                   CliStrings.EXECUTE_FUNCTION__MSG__RESULT_COLLECTOR_0_NOT_FOUND_ERROR_1,
                   resultCollectorName, e.getMessage()));
+
         } catch (Exception e) {
           context.getResultSender()
               .lastResult(CliStrings.format(
                   CliStrings.EXECUTE_FUNCTION__MSG__ERROR_IN_EXECUTING_ON_MEMBER_1_DETAILS_2,
                   functionId, member.getId(), e.getMessage()));
         }
+
       } else {
         context.getResultSender()
             .lastResult(CliStrings.EXECUTE_FUNCTION__MSG__COULD_NOT_RETRIEVE_ARGUMENTS);
@@ -143,11 +143,6 @@ public class UserFunctionExecution implements Function, InternalEntity {
     } catch (Exception ex) {
       context.getResultSender().lastResult(ex.getMessage());
     }
-  }
-
-  @Override
-  public String getId() {
-    return UserFunctionExecution.ID;
   }
 
   @Override

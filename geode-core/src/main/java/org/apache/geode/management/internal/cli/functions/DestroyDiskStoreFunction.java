@@ -18,9 +18,8 @@ import org.apache.logging.log4j.Logger;
 
 import org.apache.geode.SystemFailure;
 import org.apache.geode.cache.CacheClosedException;
-import org.apache.geode.cache.CacheFactory;
 import org.apache.geode.cache.DiskStore;
-import org.apache.geode.cache.execute.FunctionAdapter;
+import org.apache.geode.cache.execute.Function;
 import org.apache.geode.cache.execute.FunctionContext;
 import org.apache.geode.distributed.DistributedMember;
 import org.apache.geode.internal.InternalEntity;
@@ -34,25 +33,20 @@ import org.apache.geode.management.internal.configuration.domain.XmlEntity;
  * 
  * @since GemFire 8.0
  */
-public class DestroyDiskStoreFunction extends FunctionAdapter implements InternalEntity {
+public class DestroyDiskStoreFunction implements Function, InternalEntity {
+  private static final long serialVersionUID = 1L;
   private static final Logger logger = LogService.getLogger();
 
-  private static final long serialVersionUID = 1L;
-
-  private InternalCache getCache() {
-    return (InternalCache) CacheFactory.getAnyInstance();
-  }
-
   @Override
-  public void execute(FunctionContext context) {
+  public void execute(final FunctionContext context) {
     // Declared here so that it's available when returning a Throwable
     String memberId = "";
 
     try {
-      final Object[] args = (Object[]) context.getArguments();
-      final String diskStoreName = (String) args[0];
+      Object[] args = (Object[]) context.getArguments();
+      String diskStoreName = (String) args[0];
 
-      InternalCache cache = getCache();
+      InternalCache cache = (InternalCache) context.getCache();
 
       DistributedMember member = cache.getDistributedSystem().getDistributedMember();
 
@@ -95,8 +89,4 @@ public class DestroyDiskStoreFunction extends FunctionAdapter implements Interna
     }
   }
 
-  @Override
-  public String getId() {
-    return CreateDiskStoreFunction.class.getName();
-  }
 }

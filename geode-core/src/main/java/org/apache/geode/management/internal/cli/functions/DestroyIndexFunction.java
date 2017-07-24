@@ -18,9 +18,8 @@ import java.util.List;
 
 import org.apache.geode.cache.Cache;
 import org.apache.geode.cache.CacheClosedException;
-import org.apache.geode.cache.CacheFactory;
 import org.apache.geode.cache.Region;
-import org.apache.geode.cache.execute.FunctionAdapter;
+import org.apache.geode.cache.execute.Function;
 import org.apache.geode.cache.execute.FunctionContext;
 import org.apache.geode.cache.query.Index;
 import org.apache.geode.cache.query.QueryService;
@@ -30,19 +29,16 @@ import org.apache.geode.management.internal.cli.domain.IndexInfo;
 import org.apache.geode.management.internal.cli.i18n.CliStrings;
 import org.apache.geode.management.internal.configuration.domain.XmlEntity;
 
-
-
-public class DestroyIndexFunction extends FunctionAdapter implements InternalEntity {
-
+public class DestroyIndexFunction implements Function, InternalEntity {
   private static final long serialVersionUID = 1L;
 
   @Override
-  public void execute(FunctionContext context) {
+  public void execute(final FunctionContext context) {
     IndexInfo indexInfo = (IndexInfo) context.getArguments();
     String memberId = null;
 
     try {
-      Cache cache = CacheFactory.getAnyInstance();
+      Cache cache = context.getCache();
       memberId = cache.getDistributedSystem().getDistributedMember().getId();
       QueryService queryService = cache.getQueryService();
       String indexName = indexInfo.getIndexName();
@@ -87,20 +83,19 @@ public class DestroyIndexFunction extends FunctionAdapter implements InternalEnt
           }
         }
       }
+
     } catch (CacheClosedException e) {
       context.getResultSender().lastResult(new CliFunctionResult(memberId, e, e.getMessage()));
+
     } catch (Exception e) {
       context.getResultSender().lastResult(new CliFunctionResult(memberId, e, e.getMessage()));
     }
   }
 
-  /***
-   * 
-   * @param name
-   * @param queryService
+  /**
    * @return true if the index was found and removed/false if the index was not found.
    */
-  private boolean removeIndexByName(String name, QueryService queryService) {
+  private boolean removeIndexByName(final String name, final QueryService queryService) {
     List<Index> indexes = (List<Index>) queryService.getIndexes();
     boolean removed = false;
 
@@ -113,11 +108,6 @@ public class DestroyIndexFunction extends FunctionAdapter implements InternalEnt
       }
     }
     return removed;
-  }
-
-  @Override
-  public String getId() {
-    return DestroyIndexFunction.class.getName();
   }
 
 }
